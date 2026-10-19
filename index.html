@@ -1,0 +1,1611 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>星際字守 StarType Survivor — 360°宇宙打字生存遊戲</title>
+  <meta name="description" content="360度無鎖定宇宙打字生存遊戲 - 駕駛中央太空梭，以極速鍵盤連擊粉碎四面八方逼近的星際敵艦與巨型隕石！" />
+  <meta property="og:title" content="星際字守 StarType Survivor" />
+  <meta property="og:description" content="360度無鎖定宇宙打字生存遊戲 - 駕駛中央太空梭，以極速鍵盤連擊粉碎四面八方逼近的星際敵艦與巨型隕石！" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=JetBrains+Mono:wght@400;600;800&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #03050c;
+      color: #f8fafc;
+      font-family: 'JetBrains Mono', Consolas, 'Courier New', monospace;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #game-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+      z-index: 1;
+    }
+    .hud-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      z-index: 10;
+    }
+    .pointer-auto {
+      pointer-events: auto;
+    }
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+    .glow-cyan {
+      filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.6));
+    }
+    .glow-amber {
+      filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      border-radius: 0.75rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #0284c7, #6366f1, #f43f5e);
+      color: #ffffff;
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 36px rgba(129, 140, 248, 0.8);
+      transform: scale(1.03);
+    }
+    .icon-btn {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 0.5rem;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .icon-btn:hover {
+      color: #ffffff;
+      border-color: #64748b;
+      background: rgba(30, 41, 59, 0.85);
+    }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(3, 5, 12, 0.8);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .hidden {
+      display: none !important;
+    }
+    /* Virtual Keypad */
+    .key-btn {
+      flex: 1;
+      height: 2.6rem;
+      max-width: 2.6rem;
+      border-radius: 0.35rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      color: #cbd5e1;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .key-btn:active {
+      transform: scale(0.92);
+    }
+    .key-active {
+      background: #facc15 !important;
+      color: #030712 !important;
+      border-color: #fef08a !important;
+      box-shadow: 0 0 12px rgba(250, 204, 21, 0.8) !important;
+      transform: scale(1.08);
+    }
+    .heart-icon {
+      width: 1.5rem;
+      height: 1.5rem;
+      transition: all 0.3s;
+    }
+    .heart-active {
+      fill: #f43f5e;
+      color: #f43f5e;
+      filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.7));
+    }
+    .heart-empty {
+      fill: none;
+      color: #334155;
+      opacity: 0.35;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.03); }
+    }
+    .animate-pulse-glow {
+      animation: pulseGlow 1.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body>
+  <!-- 60 FPS Canvas Simulation Core -->
+  <canvas id="game-canvas"></canvas>
+
+  <!-- Title Screen -->
+  <div id="title-screen" class="modal-backdrop">
+    <div style="max-width: 52rem; width: 100%; display: flex; flex-direction: column; align-items: center; text-align: center; max-height: 96vh; overflow-y: auto; padding: 1.5rem 1rem;">
+      <!-- Records header -->
+      <div style="width: 100%; display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; margin-bottom: 1.5rem;">
+        <div>🏆 HIGH SCORE: <span id="title-high-score" style="color: #fde047; font-weight: 700;" class="tabular-nums">0</span></div>
+        <div>⚡ PEAK WPM: <span id="title-best-wpm" style="color: #34d399; font-weight: 700;" class="tabular-nums">0</span> WPM</div>
+      </div>
+
+      <!-- Bespoke SVG Title Lockup -->
+      <svg style="width: 22rem; max-width: 90vw; height: 6.5rem; margin-bottom: 1rem;" viewBox="0 0 400 110" fill="none">
+        <defs>
+          <linearGradient id="titleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#38BDF8" />
+            <stop offset="50%" stopColor="#818CF8" />
+            <stop offset="100%" stopColor="#F43F5E" />
+          </linearGradient>
+          <filter id="glowFilt" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="5" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <path d="M 20 15 L 380 15 L 395 35 L 395 95 L 380 105 L 20 105 L 5 85 L 5 35 Z" stroke="url(#titleGrad)" stroke-width="1.5" fill="rgba(15, 23, 42, 0.7)" />
+        <text x="200" y="60" text-anchor="middle" font-family="'Chakra Petch', sans-serif" font-weight="900" font-size="34" letter-spacing="3" fill="url(#titleGrad)" filter="url(#glowFilt)">STARTYPE</text>
+        <text x="200" y="90" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-weight="700" font-size="14" letter-spacing="8" fill="#F8FAFC" opacity="0.95">SURVIVOR</text>
+      </svg>
+
+      <p style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 0.95rem; color: #cbd5e1; max-width: 38rem; line-height: 1.6; margin-bottom: 1.75rem;">
+        360° 全向無鎖定宇宙打字生存戰。駕駛中央太空梭，直接敲擊目標英文字首，全場所有相符敵艦將同時受到多重雷射鎖定粉碎！
+      </p>
+
+      <button id="btn-start" class="btn btn-primary" style="padding: 0.9rem 2.5rem; font-size: 1.1rem; margin-bottom: 0.75rem;">
+        <span>🚀 LAUNCH MISSION</span>
+        <span style="font-size: 0.75rem; opacity: 0.8; font-weight: normal;">[ENTER / SPACE]</span>
+      </button>
+
+      <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 2rem;">
+        Type Letters to Shoot · Space for EMP Shockwave · No Target Locking Needed
+      </div>
+
+      <!-- Enemy Dossier -->
+      <div style="width: 100%; display: grid; grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr)); gap: 0.6rem; font-size: 0.72rem; text-align: left;">
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(6, 182, 212, 0.3); padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #06b6d4; font-weight: bold; margin-bottom: 0.2rem;">▲ 偵察機 Scout</div>
+          <div style="color: #94a3b8;">3~4 字 (sky, run)</div>
+          <div style="color: #64748b;">速度極快，優先秒殺</div>
+        </div>
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(168, 85, 247, 0.3); padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #a855f7; font-weight: bold; margin-bottom: 0.2rem;">◆ 巡洋艦 Cruiser</div>
+          <div style="color: #94a3b8;">5~7 字 (planet)</div>
+          <div style="color: #64748b;">主力敵群，數量密集</div>
+        </div>
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(239, 68, 68, 0.3); padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #ef4444; font-weight: bold; margin-bottom: 0.2rem;">⬢ 重裝艦 Dread</div>
+          <div style="color: #94a3b8;">8+ 字 (universe)</div>
+          <div style="color: #64748b;">重甲巨艦，邊蹭邊消</div>
+        </div>
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(249, 115, 22, 0.3); padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #f97316; font-weight: bold; margin-bottom: 0.2rem;">● 巨型隕石 Boss</div>
+          <div style="color: #94a3b8;">連續 2~3 階段長字</div>
+          <div style="color: #64748b;">每 5 波降臨，外殼破裂</div>
+        </div>
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #10b981; font-weight: bold; margin-bottom: 0.2rem;">✚ 修復艙 Pod</div>
+          <div style="color: #94a3b8;">heal, repair</div>
+          <div style="color: #64748b;">補 1 心 / 滿血送 600 分</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HUD Overlay -->
+  <div id="hud" class="hud-layer hidden">
+    <!-- Top HUD Bar -->
+    <div style="width: 100%; display: flex; justify-content: space-between; align-items: flex-start;">
+      <!-- Health & Combo -->
+      <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+        <div id="hud-hearts" style="display: flex; align-items: center; gap: 0.35rem;"></div>
+        <div id="hud-combo" style="color: #fde047; font-weight: bold; font-size: 0.85rem;" class="glow-amber hidden">0x COMBO</div>
+      </div>
+
+      <!-- Wave & Score -->
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em;">
+          Wave <span id="hud-wave" style="color: #38bdf8; font-weight: bold; font-size: 0.95rem;" class="tabular-nums">1</span>
+        </div>
+        <div id="hud-score" style="font-size: 1.6rem; font-weight: 900; color: #ffffff;" class="tabular-nums glow-cyan">0</div>
+      </div>
+
+      <!-- WPM, Accuracy, and Controls -->
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem;">
+        <div style="display: flex; align-items: baseline; gap: 0.6rem; font-size: 0.85rem; color: #cbd5e1;">
+          <div><span id="hud-wpm" style="font-size: 1.1rem; font-weight: bold; color: #34d399;" class="tabular-nums">0</span> <span style="font-size: 0.65rem; color: #94a3b8;">WPM</span></div>
+          <span style="color: #475569;">·</span>
+          <div><span id="hud-acc" style="font-size: 1.1rem; font-weight: bold; color: #38bdf8;" class="tabular-nums">100</span><span style="font-size: 0.65rem; color: #94a3b8;">% ACC</span></div>
+        </div>
+        <div style="display: flex; gap: 0.5rem;" class="pointer-auto">
+          <button id="btn-toggle-keypad" class="icon-btn" title="Toggle On-screen Keypad" aria-label="Virtual Keypad">⌨</button>
+          <button id="btn-toggle-mute" class="icon-btn" title="Toggle Sound" aria-label="Mute Audio">🔊</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom EMP Shockwave Bar -->
+    <div style="width: 100%; max-width: 34rem; margin: 0 auto; display: flex; flex-direction: column; align-items: center; padding-bottom: 0.5rem;">
+      <div style="width: 100%; display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.1em; padding: 0 0.25rem;">
+        <span>⚡ EMP Shockwave</span>
+        <span id="hud-emp-val" style="font-weight: bold; color: #818cf8;" class="tabular-nums">0%</span>
+      </div>
+      <div id="emp-track" class="pointer-auto" style="width: 100%; height: 0.75rem; background: rgba(15, 23, 42, 0.8); border: 1px solid #1e293b; border-radius: 9999px; padding: 2px; cursor: pointer;">
+        <div id="emp-bar" style="height: 100%; width: 0%; border-radius: 9999px; background: linear-gradient(90deg, #4f46e5, #38bdf8); transition: width 0.15s ease;"></div>
+      </div>
+      <button id="btn-emp-ready" class="btn pointer-auto hidden animate-pulse-glow" style="margin-top: 0.5rem; font-size: 0.75rem; padding: 0.35rem 1rem; background: rgba(49, 46, 129, 0.85); border: 1px solid rgba(129, 140, 248, 0.6); color: #c7d2fe; border-radius: 9999px;">
+        ⚡ PRESS [SPACE] TO ACTIVATE EMP SHOCKWAVE
+      </button>
+    </div>
+  </div>
+
+  <!-- Virtual On-screen Keypad -->
+  <div id="virtual-keypad" class="hidden" style="position: absolute; bottom: 4.5rem; left: 50%; transform: translateX(-50%); z-index: 25; width: 100%; max-width: 32rem; padding: 0 0.5rem; pointer-events: auto;">
+    <div style="background: rgba(3, 7, 18, 0.9); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid #1e293b; border-radius: 0.75rem; padding: 0.6rem; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(51, 65, 85, 0.6); padding-bottom: 0.35rem; margin-bottom: 0.5rem; font-size: 0.7rem; color: #94a3b8;">
+        <span>TOUCH KEYPAD · <span style="color: #fde047;">HIGHLIGHT = ACTIVE TARGET</span></span>
+        <button id="btn-close-keypad" style="background: transparent; border: none; color: #94a3b8; font-size: 0.9rem; cursor: pointer;">✕</button>
+      </div>
+      <div id="keypad-rows" style="display: flex; flex-direction: column; gap: 0.35rem; align-items: center;"></div>
+      <div style="display: flex; justify-content: center; margin-top: 0.35rem;">
+        <button id="keypad-space" class="key-btn" style="width: 75%; max-width: none; height: 2.2rem; font-size: 0.75rem; letter-spacing: 0.08em;">
+          SPACE · EMP SHOCKWAVE
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div id="game-over-modal" class="modal-backdrop hidden">
+    <div style="max-width: 30rem; width: 100%; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(51, 65, 85, 0.8); border-radius: 1rem; padding: 1.75rem 1.5rem; text-align: center; box-shadow: 0 0 50px rgba(0,0,0,0.9);">
+      <div style="display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); color: #f43f5e; font-size: 0.75rem; font-weight: bold; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem;">
+        MISSION TERMINATED
+      </div>
+      <h2 style="font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 1.6rem; font-weight: 900; color: #ffffff; margin-bottom: 0.25rem;">戰鬥結算 · DEBRIEF</h2>
+      <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 1.25rem;">太空梭已陣亡，星際字守數據已存檔</p>
+
+      <div style="background: rgba(3, 5, 12, 0.7); border: 1px solid #1e293b; border-radius: 0.75rem; padding: 1rem; margin-bottom: 1.25rem;">
+        <div style="font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.25rem;">FINAL SCORE</div>
+        <div id="modal-score" style="font-size: 2.4rem; font-weight: 900; color: #38bdf8;" class="tabular-nums glow-cyan">0</div>
+        <div id="modal-new-record" style="font-size: 0.75rem; color: #fde047; font-weight: bold; margin-top: 0.25rem;" class="hidden">★ NEW PERSONAL HIGH SCORE!</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: left; margin-bottom: 1.5rem; font-size: 0.7rem;">
+        <div style="background: rgba(3, 7, 18, 0.5); border: 1px solid #1e293b; padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #64748b;">WAVES</div>
+          <div id="modal-waves" style="font-size: 1.1rem; font-weight: bold; color: #ffffff;" class="tabular-nums">0</div>
+        </div>
+        <div style="background: rgba(3, 7, 18, 0.5); border: 1px solid #1e293b; padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #64748b;">DESTROYED</div>
+          <div id="modal-kills" style="font-size: 1.1rem; font-weight: bold; color: #ffffff;" class="tabular-nums">0</div>
+        </div>
+        <div style="background: rgba(3, 7, 18, 0.5); border: 1px solid #1e293b; padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #64748b;">AVG WPM</div>
+          <div id="modal-wpm" style="font-size: 1.1rem; font-weight: bold; color: #34d399;" class="tabular-nums">0</div>
+        </div>
+        <div style="background: rgba(3, 7, 18, 0.5); border: 1px solid #1e293b; padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #64748b;">ACCURACY</div>
+          <div id="modal-acc" style="font-size: 1.1rem; font-weight: bold; color: #38bdf8;" class="tabular-nums">100%</div>
+        </div>
+        <div style="background: rgba(3, 7, 18, 0.5); border: 1px solid #1e293b; padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #64748b;">MAX COMBO</div>
+          <div id="modal-combo" style="font-size: 1.1rem; font-weight: bold; color: #fde047;" class="tabular-nums">0x</div>
+        </div>
+        <div style="background: rgba(3, 7, 18, 0.5); border: 1px solid #1e293b; padding: 0.6rem; border-radius: 0.5rem;">
+          <div style="color: #64748b;">ALL-TIME HIGH</div>
+          <div id="modal-high-score" style="font-size: 1.1rem; font-weight: bold; color: #c084fc;" class="tabular-nums">0</div>
+        </div>
+      </div>
+
+      <button id="btn-restart" class="btn btn-primary" style="width: 100%; padding: 0.85rem; font-size: 1rem;">
+        <span>🔄 PLAY AGAIN</span>
+        <span style="font-size: 0.75rem; opacity: 0.8; font-weight: normal;">[ENTER]</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Pause Modal -->
+  <div id="pause-modal" class="modal-backdrop hidden">
+    <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid #334155; padding: 1.75rem; border-radius: 1rem; text-align: center; max-width: 22rem; width: 100%;">
+      <div style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem;">GAME PAUSED</div>
+      <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 1.25rem;">Press ESC or click below to resume mission</p>
+      <button id="btn-resume" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">▶ RESUME</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // --- 1. PROCEDURAL WEB AUDIO API SYNTHESIZER ---
+      class SoundSynthesizer {
+        constructor() {
+          this.ctx = null;
+          this.isMuted = false;
+          this.noiseBuffer = null;
+        }
+        init() {
+          try {
+            if (!this.ctx) {
+              const AudioCtx = window.AudioContext || window.webkitAudioContext;
+              if (AudioCtx) {
+                this.ctx = new AudioCtx();
+                this.buildNoiseBuffer();
+              }
+            }
+            if (this.ctx && this.ctx.state === 'suspended') {
+              this.ctx.resume();
+            }
+          } catch (e) {
+            console.warn('AudioContext not allowed or supported', e);
+          }
+        }
+        buildNoiseBuffer() {
+          try {
+            if (!this.ctx) return;
+            const bufferSize = this.ctx.sampleRate * 2;
+            const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+            const output = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+            this.noiseBuffer = buffer;
+          } catch (e) {}
+        }
+        toggleMute() {
+          this.isMuted = !this.isMuted;
+          return this.isMuted;
+        }
+        playLaser(combo) {
+          if (this.isMuted) return;
+          this.init();
+          if (!this.ctx) return;
+          try {
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const pitch = Math.min((combo || 0) * 35, 600);
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880 + pitch, now);
+            osc.frequency.exponentialRampToValueAtTime(180 + pitch * 0.3, now + 0.08);
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(4500, now);
+            filter.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.085);
+          } catch (e) {}
+        }
+        playExplosion(isBoss) {
+          if (this.isMuted) return;
+          this.init();
+          if (!this.ctx || !this.noiseBuffer) return;
+          try {
+            const now = this.ctx.currentTime;
+            const duration = isBoss ? 0.6 : 0.25;
+            const noise = this.ctx.createBufferSource();
+            noise.buffer = this.noiseBuffer;
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(isBoss ? 1200 : 1800, now);
+            filter.frequency.linearRampToValueAtTime(100, now + duration);
+            const gain = this.ctx.createGain();
+            gain.gain.setValueAtTime(isBoss ? 0.35 : 0.22, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+            noise.start(now);
+            noise.stop(now + duration);
+
+            const sub = this.ctx.createOscillator();
+            const subGain = this.ctx.createGain();
+            sub.type = 'triangle';
+            sub.frequency.setValueAtTime(isBoss ? 160 : 220, now);
+            sub.frequency.exponentialRampToValueAtTime(25, now + duration);
+            subGain.gain.setValueAtTime(isBoss ? 0.4 : 0.25, now);
+            subGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            sub.connect(subGain);
+            subGain.connect(this.ctx.destination);
+            sub.start(now);
+            sub.stop(now + duration);
+          } catch (e) {}
+        }
+        playEmpShockwave() {
+          if (this.isMuted) return;
+          this.init();
+          if (!this.ctx) return;
+          try {
+            const now = this.ctx.currentTime;
+            const duration = 1.2;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(120, now);
+            osc.frequency.exponentialRampToValueAtTime(28, now + duration);
+            gain.gain.setValueAtTime(0.45, now);
+            gain.gain.linearRampToValueAtTime(0.35, now + 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + duration);
+          } catch (e) {}
+        }
+        playRepair() {
+          if (this.isMuted) return;
+          this.init();
+          if (!this.ctx) return;
+          try {
+            const now = this.ctx.currentTime;
+            [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+              const osc = this.ctx.createOscillator();
+              const gain = this.ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+              gain.gain.setValueAtTime(0.001, now + idx * 0.07);
+              gain.gain.linearRampToValueAtTime(0.18, now + idx * 0.07 + 0.02);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.3);
+              osc.connect(gain);
+              gain.connect(this.ctx.destination);
+              osc.start(now + idx * 0.07);
+              osc.stop(now + idx * 0.07 + 0.35);
+            });
+          } catch (e) {}
+        }
+        playDamage() {
+          if (this.isMuted) return;
+          this.init();
+          if (!this.ctx) return;
+          try {
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(280, now);
+            osc.frequency.setValueAtTime(180, now + 0.08);
+            osc.frequency.setValueAtTime(130, now + 0.16);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.32);
+          } catch (e) {}
+        }
+        playMiss() {
+          if (this.isMuted) return;
+          this.init();
+          if (!this.ctx) return;
+          try {
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(110, now);
+            osc.frequency.exponentialRampToValueAtTime(60, now + 0.05);
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.06);
+          } catch (e) {}
+        }
+        playWaveComplete() {
+          if (this.isMuted) return;
+          this.init();
+          if (!this.ctx) return;
+          try {
+            const now = this.ctx.currentTime;
+            [440, 554.37, 659.25, 880].forEach((freq, idx) => {
+              const osc = this.ctx.createOscillator();
+              const gain = this.ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+              gain.gain.setValueAtTime(0.15, now + idx * 0.05);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.5);
+              osc.connect(gain);
+              gain.connect(this.ctx.destination);
+              osc.start(now + idx * 0.05);
+              osc.stop(now + idx * 0.05 + 0.55);
+            });
+          } catch (e) {}
+        }
+      }
+      const soundSynth = new SoundSynthesizer();
+
+      // --- 2. VOCABULARY DICTIONARIES ---
+      const SCOUT_WORDS = [
+        'sky', 'run', 'dog', 'star', 'nova', 'beam', 'flux', 'warp', 'byte', 'core',
+        'dash', 'bolt', 'echo', 'grid', 'halo', 'iron', 'moon', 'neon', 'orbit', 'pulse',
+        'scan', 'void', 'wave', 'wind', 'zen', 'apex', 'atom', 'glow', 'ray', 'sun',
+        'ship', 'hull', 'fuel', 'gear', 'mars', 'zero', 'zone', 'dark', 'fire', 'ice'
+      ];
+      const CRUISER_WORDS = [
+        'planet', 'galaxy', 'rocket', 'plasma', 'meteor', 'shield', 'comet', 'pulsar',
+        'nebula', 'cosmic', 'sensor', 'beacon', 'thrust', 'vector', 'lasers', 'energy',
+        'module', 'cipher', 'proton', 'vortex', 'matrix', 'aurora', 'quasar', 'flight',
+        'engine', 'system', 'target', 'booster', 'cruiser', 'signal', 'photon', 'strata'
+      ];
+      const DREADNOUGHT_WORDS = [
+        'universe', 'asteroid', 'satellite', 'supernova', 'hyperdrive', 'telescope',
+        'spacetime', 'blackhole', 'exoplanet', 'radiation', 'propulsion', 'antimatter',
+        'frequency', 'singularity', 'interstellar', 'constellation', 'atmosphere'
+      ];
+      const BOSS_WORD_POOLS = [
+        ['TITAN', 'OBLIVION', 'ANNIHILATE'],
+        ['COLOSSUS', 'APOCALYPSE', 'DOOMSDAY'],
+        ['LEVIATHAN', 'SUPERMASSIVE', 'EXTINCTION'],
+        ['WARBRINGER', 'CHAOSSTORM', 'OVERLORD']
+      ];
+      const REPAIR_WORDS = ['HEAL', 'HEART', 'REPAIR', 'SHIELD', 'LIFE', 'RESTORE', 'HEALTH', 'ENERGY'];
+
+      function getRandomWord(arr) {
+        return arr[Math.floor(Math.random() * arr.length)].toLowerCase();
+      }
+      function getBossWords() {
+        return BOSS_WORD_POOLS[Math.floor(Math.random() * BOSS_WORD_POOLS.length)].map(w => w.toLowerCase());
+      }
+
+      // --- 3. GAME STATE & DOM REFS ---
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+
+      const titleScreen = document.getElementById('title-screen');
+      const hud = document.getElementById('hud');
+      const gameOverModal = document.getElementById('game-over-modal');
+      const pauseModal = document.getElementById('pause-modal');
+      const virtualKeypad = document.getElementById('virtual-keypad');
+
+      const hudHearts = document.getElementById('hud-hearts');
+      const hudCombo = document.getElementById('hud-combo');
+      const hudWave = document.getElementById('hud-wave');
+      const hudScore = document.getElementById('hud-score');
+      const hudWpm = document.getElementById('hud-wpm');
+      const hudAcc = document.getElementById('hud-acc');
+      const hudEmpVal = document.getElementById('hud-emp-val');
+      const empBar = document.getElementById('emp-bar');
+      const btnEmpReady = document.getElementById('btn-emp-ready');
+
+      const titleHighScore = document.getElementById('title-high-score');
+      const titleBestWpm = document.getElementById('title-best-wpm');
+      const modalScore = document.getElementById('modal-score');
+      const modalNewRecord = document.getElementById('modal-new-record');
+      const modalWaves = document.getElementById('modal-waves');
+      const modalKills = document.getElementById('modal-kills');
+      const modalWpm = document.getElementById('modal-wpm');
+      const modalAcc = document.getElementById('modal-acc');
+      const modalCombo = document.getElementById('modal-combo');
+      const modalHighScore = document.getElementById('modal-high-score');
+
+      let gameState = 'TITLE';
+      let isPaused = false;
+      let showKeypad = false;
+
+      const state = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        ship: {
+          x: window.innerWidth / 2,
+          y: window.innerHeight / 2,
+          angle: -Math.PI / 2,
+          targetAngle: -Math.PI / 2,
+          radius: 24,
+          invulnerableTimer: 0,
+          missFlashTimer: 0,
+          thrustAnim: 0
+        },
+        enemies: [],
+        lasers: [],
+        particles: [],
+        shockwaves: [],
+        stars: [],
+        shootingStars: [],
+        screenShake: 0,
+        screenRedFlash: 0,
+        lastFrameTime: performance.now(),
+        nextEnemyId: 1,
+
+        score: 0,
+        highScore: parseInt(localStorage.getItem('startype_high_score') || '0', 10) || 0,
+        bestWpm: parseInt(localStorage.getItem('startype_best_wpm') || '0', 10) || 0,
+        wave: 1,
+        hp: 3,
+        maxHp: 3,
+        empEnergy: 0,
+        totalKeystrokes: 0,
+        correctKeystrokes: 0,
+        enemiesKilled: 0,
+        combo: 0,
+        maxCombo: 0,
+        gameStartTime: 0,
+
+        waveEnemiesRemaining: 0,
+        waveSpawnTimer: 0,
+        waveBreakTimer: 0,
+        repairSpawnTimer: 18,
+        isWaveBreak: false,
+        bossActive: false
+      };
+
+      titleHighScore.textContent = state.highScore.toLocaleString();
+      titleBestWpm.textContent = state.bestWpm.toString();
+
+      const starColors = ['#ffffff', '#a5f3fc', '#c7d2fe', '#fef08a'];
+      for (let i = 0; i < 180; i++) {
+        state.stars.push({
+          x: Math.random() * state.width,
+          y: Math.random() * state.height,
+          size: Math.random() * 2 + 0.5,
+          speed: Math.random() * 0.3 + 0.05,
+          alpha: Math.random() * 0.7 + 0.3,
+          twinkleSpeed: Math.random() * 0.02 + 0.005,
+          color: starColors[Math.floor(Math.random() * starColors.length)]
+        });
+      }
+
+      function resize() {
+        state.width = window.innerWidth;
+        state.height = window.innerHeight;
+        state.ship.x = state.width / 2;
+        state.ship.y = state.height / 2;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = state.width * dpr;
+        canvas.height = state.height * dpr;
+        canvas.style.width = state.width + 'px';
+        canvas.style.height = state.height + 'px';
+        ctx.resetTransform ? ctx.resetTransform() : ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpr, dpr);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      function updateHeartsUI() {
+        let html = '';
+        for (let i = 0; i < state.maxHp; i++) {
+          const active = i < state.hp;
+          html += `<svg class="heart-icon ${active ? 'heart-active' : 'heart-empty'}" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>`;
+        }
+        hudHearts.innerHTML = html;
+      }
+
+      function triggerEmp() {
+        if (state.empEnergy < 100 || state.hp <= 0) return;
+        state.empEnergy = 0;
+        soundSynth.playEmpShockwave();
+        const maxRadius = Math.hypot(state.width, state.height) * 0.8;
+        state.shockwaves.push({
+          x: state.ship.x,
+          y: state.ship.y,
+          radius: state.ship.radius,
+          maxRadius: maxRadius,
+          alpha: 1,
+          color: '#818cf8',
+          lineWidth: 8
+        });
+        state.screenShake = 16;
+        state.enemies.forEach(enemy => {
+          const dx = enemy.x - state.ship.x;
+          const dy = enemy.y - state.ship.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const push = Math.min(220, 30000 / dist);
+          enemy.x += (dx / dist) * push;
+          enemy.y += (dy / dist) * push;
+          enemy.frozenTimer = 3.5;
+        });
+      }
+
+      function startWave(waveNum) {
+        state.wave = waveNum;
+        state.isWaveBreak = false;
+        state.bossActive = waveNum % 5 === 0;
+        state.waveEnemiesRemaining = 6 + waveNum * 3;
+        state.waveSpawnTimer = 0.5;
+      }
+
+      function resetGame() {
+        state.enemies = [];
+        state.lasers = [];
+        state.particles = [];
+        state.shockwaves = [];
+        state.score = 0;
+        state.hp = 3;
+        state.empEnergy = 0;
+        state.totalKeystrokes = 0;
+        state.correctKeystrokes = 0;
+        state.enemiesKilled = 0;
+        state.combo = 0;
+        state.maxCombo = 0;
+        state.screenShake = 0;
+        state.screenRedFlash = 0;
+        state.gameStartTime = performance.now();
+        state.ship.invulnerableTimer = 1.0;
+        state.repairSpawnTimer = 16;
+        updateHeartsUI();
+        startWave(1);
+      }
+
+      function spawnEnemy(specificType) {
+        const padding = 60;
+        let sx = 0, sy = 0;
+        const edge = Math.floor(Math.random() * 4);
+        if (edge === 0) { sx = Math.random() * state.width; sy = -padding; }
+        else if (edge === 1) { sx = state.width + padding; sy = Math.random() * state.height; }
+        else if (edge === 2) { sx = Math.random() * state.width; sy = state.height + padding; }
+        else { sx = -padding; sy = Math.random() * state.height; }
+
+        let type = specificType || 'scout';
+        if (!specificType) {
+          const rand = Math.random();
+          if (state.bossActive && !state.enemies.some(e => e.type === 'boss')) type = 'boss';
+          else if (rand < 0.5) type = 'scout';
+          else if (rand < 0.85) type = 'cruiser';
+          else type = 'dreadnought';
+        }
+
+        let words = [], speed = 40, color = '#00F5D4', size = 18, hp = 1, cracks = null;
+        const waveScale = 1 + (state.wave - 1) * 0.07;
+        if (type === 'scout') {
+          words = [getRandomWord(SCOUT_WORDS)];
+          speed = (70 + Math.random() * 25) * waveScale;
+          color = '#00F5D4';
+          size = 16;
+        } else if (type === 'cruiser') {
+          words = [getRandomWord(CRUISER_WORDS)];
+          speed = (45 + Math.random() * 15) * waveScale;
+          color = '#C084FC';
+          size = 24;
+        } else if (type === 'dreadnought') {
+          words = [getRandomWord(DREADNOUGHT_WORDS)];
+          speed = (26 + Math.random() * 10) * waveScale;
+          color = '#F87171';
+          size = 32;
+        } else if (type === 'boss') {
+          words = getBossWords();
+          speed = 20 * waveScale;
+          color = '#FB923C';
+          size = 54;
+          hp = words.length;
+          cracks = [
+            { x1: -15, y1: -20, x2: 5, y2: 0 },
+            { x1: 5, y1: 0, x2: 25, y2: 15 },
+            { x1: -10, y1: 15, x2: 12, y2: -10 }
+          ];
+        } else if (type === 'repair') {
+          words = [getRandomWord(REPAIR_WORDS)];
+          speed = 35;
+          color = '#10B981';
+          size = 20;
+        }
+
+        const firstWord = words[0];
+        const angle = Math.atan2(state.ship.y - sy, state.ship.x - sx);
+
+        state.enemies.push({
+          id: state.nextEnemyId++,
+          type: type,
+          x: sx,
+          y: sy,
+          angle: angle,
+          speed: speed,
+          words: words,
+          currentWordIndex: 0,
+          currentWord: firstWord,
+          typedLetters: '',
+          fullCurrentWord: firstWord,
+          color: color,
+          size: size,
+          hitFlash: 0,
+          frozenTimer: 0,
+          isRepair: type === 'repair',
+          hp: hp,
+          cracks: cracks
+        });
+      }
+
+      // GLOBAL PREFIX MATCH ELIMINATION
+      function handleKeystroke(char) {
+        if (state.hp <= 0 || isPaused || gameState !== 'PLAYING') return;
+        soundSynth.init();
+        state.totalKeystrokes++;
+        const lowerChar = char.toLowerCase();
+
+        const matches = state.enemies.filter(
+          e => e.currentWord.length > 0 && e.currentWord[0].toLowerCase() === lowerChar
+        );
+
+        if (matches.length > 0) {
+          state.correctKeystrokes++;
+          state.combo++;
+          if (state.combo > state.maxCombo) state.maxCombo = state.combo;
+          state.empEnergy = Math.min(100, state.empEnergy + 1.8);
+          soundSynth.playLaser(state.combo);
+
+          matches.sort((a, b) => {
+            const da = Math.hypot(a.x - state.ship.x, a.y - state.ship.y);
+            const db = Math.hypot(b.x - state.ship.x, b.y - state.ship.y);
+            return da - db;
+          });
+
+          const closest = matches[0];
+          state.ship.targetAngle = Math.atan2(closest.y - state.ship.y, closest.x - state.ship.x);
+
+          matches.forEach(enemy => {
+            const stripped = enemy.currentWord[0];
+            enemy.typedLetters += stripped;
+            enemy.currentWord = enemy.currentWord.slice(1);
+            enemy.hitFlash = 1.0;
+
+            const pushA = Math.atan2(enemy.y - state.ship.y, enemy.x - state.ship.x);
+            enemy.x += Math.cos(pushA) * 12;
+            enemy.y += Math.sin(pushA) * 12;
+
+            state.lasers.push({
+              startX: state.ship.x + Math.cos(state.ship.targetAngle) * 20,
+              startY: state.ship.y + Math.sin(state.ship.targetAngle) * 20,
+              targetX: enemy.x,
+              targetY: enemy.y,
+              color: enemy.isRepair ? '#34d399' : '#38bdf8',
+              life: 0.1,
+              maxLife: 0.1,
+              width: 3.5
+            });
+
+            for (let i = 0; i < 4; i++) {
+              const sparkA = Math.random() * Math.PI * 2;
+              const sp = Math.random() * 3 + 1;
+              state.particles.push({
+                x: enemy.x, y: enemy.y,
+                vx: Math.cos(sparkA) * sp, vy: Math.sin(sparkA) * sp,
+                size: Math.random() * 2 + 1.5, color: '#facc15',
+                alpha: 1, decay: 0.05, shape: 'spark'
+              });
+            }
+
+            state.score += 15 * Math.min(state.combo, 10);
+
+            if (enemy.currentWord.length === 0) {
+              if (enemy.type === 'boss' && enemy.currentWordIndex < enemy.words.length - 1) {
+                enemy.currentWordIndex++;
+                const nextW = enemy.words[enemy.currentWordIndex];
+                enemy.currentWord = nextW;
+                enemy.typedLetters = '';
+                enemy.fullCurrentWord = nextW;
+                enemy.hitFlash = 1.0;
+                state.score += 300;
+                soundSynth.playExplosion(false);
+                state.screenShake = 10;
+              } else {
+                enemy.hp = 0;
+                state.enemiesKilled++;
+                if (enemy.isRepair) {
+                  soundSynth.playRepair();
+                  if (state.hp < state.maxHp) state.hp++;
+                  else state.score += 600;
+                  updateHeartsUI();
+                } else {
+                  const isBoss = enemy.type === 'boss';
+                  soundSynth.playExplosion(isBoss);
+                  state.screenShake = isBoss ? 20 : 8;
+                  state.empEnergy = Math.min(100, state.empEnergy + (isBoss ? 25 : 5));
+                  const pts = { scout: 100, cruiser: 250, dreadnought: 500, boss: 2000, repair: 150 };
+                  state.score += pts[enemy.type] || 100;
+                  const pCount = isBoss ? 45 : 18;
+                  for (let p = 0; p < pCount; p++) {
+                    const pA = Math.random() * Math.PI * 2;
+                    const pSp = Math.random() * (isBoss ? 7 : 4) + 1;
+                    state.particles.push({
+                      x: enemy.x, y: enemy.y,
+                      vx: Math.cos(pA) * pSp, vy: Math.sin(pA) * pSp,
+                      size: Math.random() * 3 + 2,
+                      color: p % 2 === 0 ? enemy.color : '#fef08a',
+                      alpha: 1, decay: Math.random() * 0.02 + 0.015, shape: 'circle'
+                    });
+                  }
+                }
+              }
+            }
+          });
+
+          state.enemies = state.enemies.filter(e => e.hp > 0);
+        } else {
+          state.combo = 0;
+          state.ship.missFlashTimer = 0.2;
+          soundSynth.playMiss();
+        }
+      }
+
+      function gameOver() {
+        gameState = 'GAMEOVER';
+        hud.classList.add('hidden');
+        gameOverModal.classList.remove('hidden');
+
+        const elapsedMin = (performance.now() - state.gameStartTime) / 60000;
+        const finalWpm = Math.round((state.correctKeystrokes / 5) / (elapsedMin || 1 / 60));
+        const finalAcc = state.totalKeystrokes > 0 ? Math.round((state.correctKeystrokes / state.totalKeystrokes) * 100) : 100;
+
+        let isNewHigh = false;
+        if (state.score > state.highScore) {
+          state.highScore = state.score;
+          localStorage.setItem('startype_high_score', state.score.toString());
+          isNewHigh = true;
+        }
+        if (finalWpm > state.bestWpm) {
+          state.bestWpm = finalWpm;
+          localStorage.setItem('startype_best_wpm', finalWpm.toString());
+        }
+
+        modalScore.textContent = state.score.toLocaleString();
+        modalNewRecord.classList.toggle('hidden', !isNewHigh);
+        modalWaves.textContent = state.wave.toString();
+        modalKills.textContent = state.enemiesKilled.toString();
+        modalWpm.textContent = finalWpm.toString();
+        modalAcc.textContent = finalAcc + '%';
+        modalCombo.textContent = state.maxCombo + 'x';
+        modalHighScore.textContent = state.highScore.toLocaleString();
+      }
+
+      // ROBUST KEYBOARD LISTENER (handles IME & direct physical keys)
+      window.addEventListener('keydown', e => {
+        // Space action
+        if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
+          e.preventDefault();
+          soundSynth.init();
+          if (gameState === 'TITLE') {
+            startGame();
+          } else if (gameState === 'GAMEOVER') {
+            restartGame();
+          } else if (gameState === 'PLAYING') {
+            triggerEmp();
+          }
+          return;
+        }
+
+        // Enter action
+        if (e.code === 'Enter' || e.key === 'Enter' || e.keyCode === 13) {
+          e.preventDefault();
+          soundSynth.init();
+          if (gameState === 'TITLE') startGame();
+          else if (gameState === 'GAMEOVER') restartGame();
+          return;
+        }
+
+        // Escape action
+        if (e.code === 'Escape' || e.key === 'Escape' || e.keyCode === 27) {
+          if (gameState === 'PLAYING') {
+            e.preventDefault();
+            isPaused = !isPaused;
+            pauseModal.classList.toggle('hidden', !isPaused);
+          }
+          return;
+        }
+
+        // English letters (supports e.code so Chinese IME does not block typing!)
+        let letter = '';
+        if (e.code && e.code.startsWith('Key') && e.code.length === 4) {
+          letter = e.code.slice(3).toLowerCase();
+        } else if (e.key && /^[a-zA-Z]$/.test(e.key)) {
+          letter = e.key.toLowerCase();
+        }
+
+        if (letter && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
+          handleKeystroke(letter);
+        }
+      });
+
+      // Virtual Keypad Setup
+      const KEY_ROWS = [
+        ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+        ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+        ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
+      ];
+      const keypadRowsEl = document.getElementById('keypad-rows');
+      KEY_ROWS.forEach(row => {
+        const rowDiv = document.createElement('div');
+        rowDiv.style.display = 'flex';
+        rowDiv.style.gap = '0.25rem';
+        rowDiv.style.justifyContent = 'center';
+        rowDiv.style.width = '100%';
+        row.forEach(char => {
+          const btn = document.createElement('button');
+          btn.className = 'key-btn';
+          btn.dataset.key = char;
+          btn.textContent = char;
+          btn.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            handleKeystroke(char);
+          });
+          rowDiv.appendChild(btn);
+        });
+        keypadRowsEl.appendChild(rowDiv);
+      });
+      document.getElementById('keypad-space').addEventListener('click', (ev) => {
+        ev.preventDefault();
+        triggerEmp();
+      });
+      document.getElementById('btn-close-keypad').addEventListener('click', () => {
+        showKeypad = false;
+        virtualKeypad.classList.add('hidden');
+      });
+
+      function updateActiveKeypadHighlights() {
+        if (!showKeypad) return;
+        const activeChars = new Set();
+        state.enemies.forEach(e => {
+          if (e.currentWord.length > 0) activeChars.add(e.currentWord[0].toUpperCase());
+        });
+        const allKeyBtns = keypadRowsEl.querySelectorAll('.key-btn');
+        allKeyBtns.forEach(btn => {
+          const char = btn.dataset.key;
+          btn.classList.toggle('key-active', activeChars.has(char));
+        });
+      }
+
+      function startGame() {
+        soundSynth.init();
+        gameState = 'PLAYING';
+        isPaused = false;
+        titleScreen.classList.add('hidden');
+        gameOverModal.classList.add('hidden');
+        pauseModal.classList.add('hidden');
+        hud.classList.remove('hidden');
+        resetGame();
+      }
+
+      function restartGame() {
+        startGame();
+      }
+
+      document.getElementById('btn-start').addEventListener('click', startGame);
+      document.getElementById('btn-restart').addEventListener('click', restartGame);
+      document.getElementById('btn-resume').addEventListener('click', () => {
+        isPaused = false;
+        pauseModal.classList.add('hidden');
+      });
+      document.getElementById('btn-toggle-keypad').addEventListener('click', () => {
+        showKeypad = !showKeypad;
+        virtualKeypad.classList.toggle('hidden', !showKeypad);
+      });
+      document.getElementById('btn-toggle-mute').addEventListener('click', function () {
+        soundSynth.init();
+        const muted = soundSynth.toggleMute();
+        this.textContent = muted ? '🔇' : '🔊';
+      });
+      document.getElementById('emp-track').addEventListener('click', triggerEmp);
+      btnEmpReady.addEventListener('click', triggerEmp);
+
+      // --- 4. 60 FPS RENDER SIMULATION LOOP ---
+      let lastMetricsSync = 0;
+
+      function loop(now) {
+        const rawDt = (now - state.lastFrameTime) / 1000;
+        state.lastFrameTime = now;
+        const dt = Math.min(rawDt, 0.05);
+
+        if (gameState === 'PLAYING' && !isPaused && state.hp > 0) {
+          if (state.screenShake > 0) state.screenShake = Math.max(0, state.screenShake - dt * 25);
+          if (state.screenRedFlash > 0) state.screenRedFlash = Math.max(0, state.screenRedFlash - dt * 2.5);
+          if (state.ship.invulnerableTimer > 0) state.ship.invulnerableTimer = Math.max(0, state.ship.invulnerableTimer - dt);
+          if (state.ship.missFlashTimer > 0) state.ship.missFlashTimer = Math.max(0, state.ship.missFlashTimer - dt);
+          state.ship.thrustAnim += dt * 15;
+
+          let diff = state.ship.targetAngle - state.ship.angle;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          state.ship.angle += diff * Math.min(1, dt * 16);
+
+          if (!state.isWaveBreak) {
+            state.waveSpawnTimer -= dt;
+            if (state.waveSpawnTimer <= 0 && state.waveEnemiesRemaining > 0) {
+              spawnEnemy();
+              state.waveEnemiesRemaining--;
+              state.waveSpawnTimer = Math.max(0.6, 1.8 - state.wave * 0.12);
+            }
+            if (state.waveEnemiesRemaining <= 0 && state.enemies.length === 0) {
+              state.isWaveBreak = true;
+              state.waveBreakTimer = 2.4;
+              soundSynth.playWaveComplete();
+            }
+          } else {
+            state.waveBreakTimer -= dt;
+            if (state.waveBreakTimer <= 0) startWave(state.wave + 1);
+          }
+
+          state.repairSpawnTimer -= dt;
+          if (state.repairSpawnTimer <= 0) {
+            spawnEnemy('repair');
+            state.repairSpawnTimer = 22 + Math.random() * 10;
+          }
+
+          if (Math.random() < 0.008 && state.shootingStars.length < 3) {
+            const angle = Math.PI / 4 + (Math.random() - 0.5) * 0.4;
+            const sp = Math.random() * 400 + 400;
+            state.shootingStars.push({
+              x: Math.random() * state.width,
+              y: Math.random() * (state.height * 0.4),
+              vx: Math.cos(angle) * sp, vy: Math.sin(angle) * sp,
+              length: Math.random() * 80 + 60, life: 0.6, maxLife: 0.6, color: '#a5f3fc'
+            });
+          }
+          state.shootingStars.forEach(st => {
+            st.x += st.vx * dt; st.y += st.vy * dt; st.life -= dt;
+          });
+          state.shootingStars = state.shootingStars.filter(st => st.life > 0);
+
+          for (let i = state.enemies.length - 1; i >= 0; i--) {
+            const e = state.enemies[i];
+            if (e.hitFlash > 0) e.hitFlash = Math.max(0, e.hitFlash - dt * 6);
+            if (e.frozenTimer > 0) {
+              e.frozenTimer = Math.max(0, e.frozenTimer - dt);
+              continue;
+            }
+            const dx = state.ship.x - e.x;
+            const dy = state.ship.y - e.y;
+            const dist = Math.hypot(dx, dy);
+            e.angle = Math.atan2(dy, dx);
+            e.x += Math.cos(e.angle) * (e.speed * dt);
+            e.y += Math.sin(e.angle) * (e.speed * dt);
+
+            if (dist < state.ship.radius + e.size) {
+              state.enemies.splice(i, 1);
+              if (e.isRepair) continue;
+              soundSynth.playExplosion(e.type === 'boss');
+              if (state.ship.invulnerableTimer <= 0) {
+                state.hp--;
+                state.combo = 0;
+                state.screenShake = 22;
+                state.screenRedFlash = 0.8;
+                state.ship.invulnerableTimer = 1.8;
+                soundSynth.playDamage();
+                updateHeartsUI();
+                if (state.hp <= 0) {
+                  gameOver();
+                  break;
+                }
+              }
+            }
+          }
+
+          state.lasers.forEach(l => l.life -= dt);
+          state.lasers = state.lasers.filter(l => l.life > 0);
+
+          state.particles.forEach(p => {
+            p.x += p.vx; p.y += p.vy; p.alpha -= p.decay;
+          });
+          state.particles = state.particles.filter(p => p.alpha > 0);
+
+          state.shockwaves.forEach(sw => {
+            sw.radius += (sw.maxRadius - sw.radius) * Math.min(1, dt * 10);
+            sw.alpha -= dt * 0.9;
+          });
+          state.shockwaves = state.shockwaves.filter(sw => sw.alpha > 0);
+
+          if (now - lastMetricsSync > 160) {
+            lastMetricsSync = now;
+            hudWave.textContent = state.wave.toString();
+            hudScore.textContent = state.score.toLocaleString();
+            const elapsedMin = (now - state.gameStartTime) / 60000;
+            const curWpm = Math.round((state.correctKeystrokes / 5) / (elapsedMin || 1 / 60));
+            const curAcc = state.totalKeystrokes > 0 ? Math.round((state.correctKeystrokes / state.totalKeystrokes) * 100) : 100;
+            hudWpm.textContent = curWpm.toString();
+            hudAcc.textContent = curAcc.toString();
+
+            if (state.combo > 2) {
+              hudCombo.textContent = state.combo + 'x COMBO';
+              hudCombo.classList.remove('hidden');
+            } else {
+              hudCombo.classList.add('hidden');
+            }
+
+            const empPct = Math.floor(state.empEnergy);
+            hudEmpVal.textContent = empPct + '%';
+            empBar.style.width = empPct + '%';
+            const isEmpReady = state.empEnergy >= 100;
+            btnEmpReady.classList.toggle('hidden', !isEmpReady);
+
+            updateActiveKeypadHighlights();
+          }
+        }
+
+        // RENDER
+        ctx.save();
+        if (state.screenShake > 0) {
+          ctx.translate((Math.random() - 0.5) * state.screenShake, (Math.random() - 0.5) * state.screenShake);
+        }
+
+        const bgGrad = ctx.createRadialGradient(
+          state.width / 2, state.height / 2, 80,
+          state.width / 2, state.height / 2, Math.max(state.width, state.height) * 0.7
+        );
+        bgGrad.addColorStop(0, '#0c102c');
+        bgGrad.addColorStop(0.6, '#070a1a');
+        bgGrad.addColorStop(1, '#03050c');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, state.width, state.height);
+
+        state.stars.forEach(s => {
+          s.alpha += (Math.random() - 0.5) * s.twinkleSpeed;
+          if (s.alpha > 0.95) s.alpha = 0.95;
+          if (s.alpha < 0.2) s.alpha = 0.2;
+          ctx.fillStyle = s.color;
+          ctx.globalAlpha = s.alpha;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 1;
+
+        state.shootingStars.forEach(st => {
+          ctx.save();
+          ctx.strokeStyle = st.color;
+          ctx.globalAlpha = Math.max(0, st.life / st.maxLife);
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(st.x, st.y);
+          ctx.lineTo(st.x - (st.vx / 400) * st.length, st.y - (st.vy / 400) * st.length);
+          ctx.stroke();
+          ctx.restore();
+        });
+
+        state.shockwaves.forEach(sw => {
+          ctx.save();
+          ctx.strokeStyle = sw.color;
+          ctx.lineWidth = sw.lineWidth;
+          ctx.globalAlpha = Math.max(0, sw.alpha);
+          ctx.shadowColor = sw.color;
+          ctx.shadowBlur = 20;
+          ctx.beginPath();
+          ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        });
+
+        state.lasers.forEach(l => {
+          ctx.save();
+          ctx.strokeStyle = l.color;
+          ctx.lineWidth = l.width;
+          ctx.shadowColor = l.color;
+          ctx.shadowBlur = 12;
+          ctx.globalAlpha = l.life / l.maxLife;
+          ctx.beginPath();
+          ctx.moveTo(l.startX, l.startY);
+          ctx.lineTo(l.targetX, l.targetY);
+          ctx.stroke();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = l.width * 0.4;
+          ctx.stroke();
+          ctx.restore();
+        });
+
+        state.particles.forEach(p => {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, p.alpha);
+          ctx.fillStyle = p.color;
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 6;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        });
+
+        // Central Ship
+        ctx.save();
+        ctx.translate(state.ship.x, state.ship.y);
+
+        if (state.ship.missFlashTimer > 0) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)';
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#ef4444';
+          ctx.shadowBlur = 14;
+          ctx.beginPath();
+          ctx.arc(0, 0, state.ship.radius + 14, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        if (state.ship.invulnerableTimer > 0) {
+          ctx.save();
+          const sa = 0.4 + Math.sin(now * 0.015) * 0.25;
+          ctx.strokeStyle = `rgba(56, 189, 248, ${sa})`;
+          ctx.lineWidth = 3;
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 16;
+          ctx.beginPath();
+          ctx.arc(0, 0, state.ship.radius + 12, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        ctx.rotate(state.ship.angle);
+
+        const fLen = 12 + Math.sin(state.ship.thrustAnim) * 5;
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(-16, -5);
+        ctx.lineTo(-16 - fLen, 0);
+        ctx.lineTo(-16, 5);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(22, 0);
+        ctx.lineTo(-14, -14);
+        ctx.lineTo(-8, -4);
+        ctx.lineTo(-14, 4);
+        ctx.lineTo(-14, 14);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#0284c7';
+        ctx.beginPath();
+        ctx.moveTo(10, 0);
+        ctx.lineTo(-2, -4);
+        ctx.lineTo(-2, 4);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+
+        // Enemies & Word Tag
+        state.enemies.forEach(enemy => {
+          ctx.save();
+          ctx.translate(enemy.x, enemy.y);
+
+          if (enemy.frozenTimer > 0) {
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(0, 0, enemy.size + 8, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          if (enemy.hitFlash > 0) {
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 20;
+          } else {
+            ctx.fillStyle = enemy.color;
+            ctx.shadowColor = enemy.color;
+            ctx.shadowBlur = 12;
+          }
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.5;
+
+          ctx.save();
+          ctx.rotate(enemy.angle);
+
+          if (enemy.type === 'scout') {
+            ctx.beginPath();
+            ctx.moveTo(enemy.size, 0);
+            ctx.lineTo(-enemy.size * 0.8, -enemy.size * 0.7);
+            ctx.lineTo(-enemy.size * 0.4, 0);
+            ctx.lineTo(-enemy.size * 0.8, enemy.size * 0.7);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          } else if (enemy.type === 'cruiser') {
+            ctx.beginPath();
+            ctx.moveTo(enemy.size, 0);
+            ctx.lineTo(enemy.size * 0.3, -enemy.size * 0.8);
+            ctx.lineTo(-enemy.size * 0.8, -enemy.size * 0.7);
+            ctx.lineTo(-enemy.size * 0.5, 0);
+            ctx.lineTo(-enemy.size * 0.8, enemy.size * 0.7);
+            ctx.lineTo(enemy.size * 0.3, enemy.size * 0.8);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          } else if (enemy.type === 'dreadnought') {
+            ctx.beginPath();
+            for (let a = 0; a < 6; a++) {
+              const hAngle = (a * Math.PI) / 3;
+              const hx = Math.cos(hAngle) * enemy.size;
+              const hy = Math.sin(hAngle) * enemy.size;
+              if (a === 0) ctx.moveTo(hx, hy);
+              else ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#7f1d1d';
+            ctx.beginPath();
+            ctx.arc(0, 0, enemy.size * 0.45, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (enemy.type === 'boss') {
+            ctx.beginPath();
+            const points = 10;
+            for (let p = 0; p < points; p++) {
+              const bAngle = (p * Math.PI * 2) / points;
+              const radiusVar = enemy.size * (0.8 + Math.sin(p * 2.3) * 0.2);
+              const bx = Math.cos(bAngle) * radiusVar;
+              const by = Math.sin(bAngle) * radiusVar;
+              if (p === 0) ctx.moveTo(bx, by);
+              else ctx.lineTo(bx, by);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            if (enemy.cracks) {
+              ctx.strokeStyle = '#fef08a';
+              ctx.lineWidth = 2.5;
+              ctx.shadowColor = '#f97316';
+              ctx.shadowBlur = 10;
+              enemy.cracks.forEach(c => {
+                ctx.beginPath();
+                ctx.moveTo(c.x1, c.y1);
+                ctx.lineTo(c.x2, c.y2);
+                ctx.stroke();
+              });
+            }
+          } else if (enemy.type === 'repair') {
+            ctx.beginPath();
+            ctx.arc(0, 0, enemy.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-3, -enemy.size * 0.6, 6, enemy.size * 1.2);
+            ctx.fillRect(-enemy.size * 0.6, -3, enemy.size * 1.2, 6);
+          }
+          ctx.restore();
+
+          // Word Label
+          const tagY = -enemy.size - 18;
+          const fullWord = enemy.fullCurrentWord.toUpperCase();
+          const typedPrefix = enemy.typedLetters.toUpperCase();
+          const remaining = enemy.currentWord.toUpperCase();
+          const activeLetter = remaining[0] || '';
+          const restOfWord = remaining.slice(1);
+
+          ctx.font = 'bold 15px "JetBrains Mono", Consolas, monospace';
+          const totalWidth = ctx.measureText(fullWord).width + 16;
+          const tagHeight = 22;
+
+          ctx.fillStyle = 'rgba(7, 10, 24, 0.88)';
+          ctx.strokeStyle = enemy.isRepair ? '#10b981' : (enemy.type === 'boss' ? '#f97316' : '#334155');
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.roundRect(-totalWidth / 2, tagY - tagHeight / 2, totalWidth, tagHeight, 4);
+          ctx.fill();
+          ctx.stroke();
+
+          let cursorX = -totalWidth / 2 + 8;
+          ctx.textBaseline = 'middle';
+
+          if (typedPrefix) {
+            ctx.fillStyle = '#64748b';
+            ctx.font = 'bold 14px "JetBrains Mono", Consolas, monospace';
+            ctx.fillText(typedPrefix, cursorX, tagY);
+            cursorX += ctx.measureText(typedPrefix).width;
+          }
+
+          if (activeLetter) {
+            ctx.save();
+            ctx.fillStyle = '#fde047';
+            ctx.shadowColor = '#eab308';
+            ctx.shadowBlur = 10;
+            ctx.font = '800 17px "JetBrains Mono", Consolas, monospace';
+            ctx.fillText(activeLetter, cursorX, tagY);
+            cursorX += ctx.measureText(activeLetter).width;
+            ctx.restore();
+          }
+
+          if (restOfWord) {
+            ctx.fillStyle = '#f8fafc';
+            ctx.font = 'bold 14px "JetBrains Mono", Consolas, monospace';
+            ctx.fillText(restOfWord, cursorX, tagY);
+          }
+
+          if (enemy.type === 'boss') {
+            const pipY = tagY - 14;
+            const totalPhases = enemy.words.length;
+            for (let p = 0; p < totalPhases; p++) {
+              const pipX = (p - (totalPhases - 1) / 2) * 12;
+              ctx.fillStyle = p <= enemy.currentWordIndex ? '#f97316' : '#475569';
+              ctx.beginPath();
+              ctx.arc(pipX, pipY, 3, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+
+          ctx.restore();
+        });
+
+        if (state.isWaveBreak) {
+          ctx.save();
+          ctx.fillStyle = '#38bdf8';
+          ctx.shadowColor = '#38bdf8';
+          ctx.shadowBlur = 16;
+          ctx.font = 'italic 700 32px "Chakra Petch", sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(`WAVE ${state.wave} CLEARED`, state.width / 2, state.height / 2 - 100);
+          ctx.restore();
+        }
+
+        if (state.screenRedFlash > 0) {
+          ctx.fillStyle = `rgba(220, 38, 38, ${state.screenRedFlash * 0.45})`;
+          ctx.fillRect(0, 0, state.width, state.height);
+        }
+
+        ctx.restore();
+
+        requestAnimationFrame(loop);
+      }
+
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
